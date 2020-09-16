@@ -1,0 +1,122 @@
+﻿<script src="~/Scripts/jquery-3.0.0.min.js"></script>
+<script src="~/Scripts/bootstrap.min.js"></script>
+
+
+<!--<script>
+    function UserAction1() {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                document.getElementById("output").innerHTML = this.responseText;
+            }
+        };
+        req.open("GET", "http://localhost:5001/api/currenttime", true);
+        req.setRequestHeader("Content-type", "application/json");
+        req.send();
+
+    }
+</script>-->
+
+@model Clockwork.Web.Models.HomeViewModel
+
+
+
+<script>
+    function UserAction() {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var formattedResult = FormatTimeQuery(this.responseText);
+                document.getElementById("output").innerHTML = formattedResult;
+                var logs = document.getElementById("requestLogs");
+                logs.insertAdjacentHTML('beforeend', formattedResult);
+            }
+        };
+        var timeZone = document.getElementById("SelectedTimeZone");
+        var zoneId = timeZone.options[timeZone.selectedIndex].value;
+        var url = "http://localhost:5001/api/currenttime";
+        if (zoneId !== "")
+            url += "?zoneId=" + zoneId;
+        req.open("GET", url, true);
+        req.setRequestHeader("Content-type", "application/json");
+        req.send();
+    }
+    function GetAllRequests() {
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                DisplayAllRequests(this.responseText);
+            }
+        };
+        req.open("GET", "http://localhost:5001/api/currenttime/all", true);
+        req.setRequestHeader("Content-type", "application/json");
+        req.send();
+    }
+    function FormatTimeQuery(responseText) {
+        var databaseQuery;
+        if (typeof responseText === "object") {
+            databaseQuery = responseText;
+        }
+        else {
+            databaseQuery = JSON.parse(responseText);
+        }
+        let utcDateForm = new Date(databaseQuery.utcTime).toUTCString();
+        let currentDateForm = new Date(databaseQuery.time).toLocaleTimeString();
+        let currentTime = `<div>Id:${databaseQuery.currentTimeQueryId}</div>
+                            <div>IP Address:${ databaseQuery.clientIp}</div>
+                            <div>Time:${currentDateForm}</div>
+                            <div>${databaseQuery.zoneId != null ? databaseQuery.zoneId : "Not Found"} </div>
+                            <div>UTC Time:${utcDateForm} </div>
+                            `;
+        console.log(databaseQuery.zoneId);
+        return currentTime;
+    }
+    function DisplayAllRequests(responseText) {
+        var results = JSON.parse(responseText);
+        var logs = document.getElementById("requestLogs");
+        for (i = 0; i < results.length; i++) {
+            logs.insertAdjacentHTML('beforeend', FormatTimeQuery(results[i]));
+        }
+    }
+    window.onload = GetAllRequests();
+</script>
+
+<div class="container">
+    <h2 style="color:blue">AWH Clockwork Project @ViewData["Version"] on @ViewData["Runtime"]!</h2>
+
+    <div class="row">
+        <div class="col">
+            @Html.DropDownListFor(timezoneid => timezoneid.SelectedTimeZone, Model.TimeZones, new { Class = "form-control" })
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-sm btn-primary" onclick="UserAction()">Get the time</button>
+        </div>
+    </div>
+
+    <br />
+
+    <div id="output">
+
+    </div>
+    <div class="row-cols-4" id=" databaseQuery.timeZoneInfoId"></div>
+    <br />
+
+    <div class="accordion" id="accordion-results">
+        <div class="card">
+            <div class="card-header" id="heading-results">
+                <h3 class="mb-0">
+                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-results" aria-expanded="false" aria-controls="collapse-results">
+                        Previous Entries
+                    </button>
+                </h3>
+            </div>
+
+            <div id="collapse-results" class="collapse" aria-labelledby="heading-results" data-parent="#accordion-results">
+                <div class="card-body">
+                    <div id="requestLogs"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
